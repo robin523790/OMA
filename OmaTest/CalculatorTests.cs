@@ -114,13 +114,13 @@ namespace OmaTest
             Assert.AreEqual(expected, result2);
         }
 
-        // 100000.... * 2 = 200000....
+        // 100000.... * 1234 = 123400000....
         [TestMethod]
         public void TestMultiply_VeryBigNumbers()
         {
-            var factorA = "1" + new string('0', 1000000);
-            var factorB = "2";
-            var expected = "2" + new string('0', 1000000);
+            var factorA = "1" + new string('0', 100000);
+            var factorB = "12345678901234567890123456789012345678901234567890";
+            var expected = "12345678901234567890123456789012345678901234567890" + new string('0', 1000000);
 
             var result1 = calculator.Multiply(factorA, factorB);
             var result2 = calculator.Multiply(factorB, factorA);  // Multiply() must be commutative, ie. same result when inputs are swapped

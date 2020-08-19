@@ -149,7 +149,61 @@ namespace OmaConsole
 
         public string Multiply(string factorA, string factorB)
         {
-            throw new NotImplementedException();
+            var negativeA = factorA.StartsWith('-');
+            var negativeB = factorB.StartsWith('-');
+
+            // if both factors are negative, think positive
+            if (negativeA && negativeB)
+            {
+                return Multiply(factorA.Substring(1), factorB.Substring(1));
+            }
+
+            // if only one factor is negative, the result is always negative
+            if (negativeA)
+            {
+                return "-" + Multiply(factorA.Substring(1), factorB);
+            }
+            else if (negativeB)
+            {
+                return "-" + Multiply(factorA, factorB.Substring(1));
+            }
+
+            string result = "0";
+
+            for (int a = factorA.Length - 1; a >= 0; a--)
+            {
+                string rowResult = "0";
+
+                for (int b = factorB.Length - 1; b >= 0; b--)
+                {
+                    // Get the last digits of factorA and factorB
+                    // - by now the code ensures that both are positive
+                    int valA = (int)Char.GetNumericValue(factorA[a]);
+                    int valB = (int)Char.GetNumericValue(factorB[b]);
+                    int res = valA * valB;
+                    string row = res.ToString();
+
+                    // add a '0' for every digit left of the last
+                    int zerosB = factorB.Length - 1 - b;
+                    if (zerosB > 0)
+                    {
+                        row += new string('0', zerosB);
+                    }
+
+                    rowResult = Add(rowResult, row);
+                }
+
+                // add another '0' for every digit left of the last
+                int zerosA = factorA.Length - 1 - a;
+                if (zerosA > 0)
+                {
+                    rowResult += new string('0', zerosA);
+                }
+                
+                result = Add(rowResult, result);
+            }
+
+            return result;
         }
 
         public string Pow(string baseValue, string exponent)

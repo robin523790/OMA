@@ -1,3 +1,4 @@
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OmaConsole;
 using System;
@@ -44,9 +45,9 @@ namespace OmaTest
         [TestMethod]
         public void TestAdd_VeryBigNumbers()
         {
-            var summandA = new string('9', 1000000);
+            var summandA = new string('9', 100000);
             var summandB = "1";
-            var expected = "1" + new string('0', 1000000);
+            var expected = "1" + new string('0', 100000);
 
             var result1 = calculator.Add(summandA, summandB);
             var result2 = calculator.Add(summandB, summandA);  // Add() must be commutative, ie. same result when inputs are swapped
@@ -85,9 +86,9 @@ namespace OmaTest
         [TestMethod]
         public void TestSub_VeryBigNumbers()
         {
-            var minuend = "1" + new string('0', 1000000);
+            var minuend = "1" + new string('0', 100000);
             var subtrahend = "1";
-            var expected = new string('9', 1000000);
+            var expected = new string('9', 100000);
 
             var result = calculator.Sub(minuend, subtrahend);
 
@@ -118,9 +119,9 @@ namespace OmaTest
         [TestMethod]
         public void TestMultiply_VeryBigNumbers()
         {
-            var factorA = "1" + new string('0', 100000);
+            var factorA = "1" + new string('0', 1000);
             var factorB = "12345678901234567890123456789012345678901234567890";
-            var expected = "12345678901234567890123456789012345678901234567890" + new string('0', 1000000);
+            var expected = "12345678901234567890123456789012345678901234567890" + new string('0', 1000);
 
             var result1 = calculator.Multiply(factorA, factorB);
             var result2 = calculator.Multiply(factorB, factorA);  // Multiply() must be commutative, ie. same result when inputs are swapped
@@ -170,11 +171,54 @@ namespace OmaTest
         [TestMethod]
         public void TestPow_VeryBigNumbers()
         {
-            var baseValue = "1" + new string('0', 1000);
-            var exponent = "400";
-            var expected = "1" + new string('0', 400000);
+            var baseValue = "2" + new string('0', 50);
+            var exponent = "40";
+            // is the same as 2^40 * (10^50)^40
+            var expected = "1099511627776" + new string('0', 2000);
 
             var result = calculator.Pow(baseValue, exponent);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [DataTestMethod]
+        [DataRow("0", "0")] // Pow() of zero remains zero
+        [DataRow("1", "1")]
+        [DataRow("2", "4")]
+        [DataRow("3", "9")]
+        [DataRow("-3", "9")]
+        [DataRow("4", "16")]
+        [DataRow("5", "25")]
+        [DataRow("6", "36")]
+        [DataRow("7", "49")]
+        [DataRow("8", "64")]
+        [DataRow("9", "81")]
+        [DataRow("9", "81")]
+        [DataRow("10", "100")]
+        [DataRow("11", "121")]
+        [DataRow("12", "144")]
+        [DataRow("100", "10000")]
+        [DataRow("10000", "100000000")]
+        [DataRow("100000000", "10000000000000000")]
+        [DataRow("1000000000000", "1000000000000000000000000")]
+        [DataRow("10000000000000000", "100000000000000000000000000000000")]
+        [DataRow("100000000000000000000", "10000000000000000000000000000000000000000")]
+        [DataRow("10000000000000000000000000000", "100000000000000000000000000000000000000000000000000000000")]
+        public void TestSqr(string baseValue, string expected)
+        {
+            var result = calculator.Sqr(baseValue);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        // Sqr(10^500) = 10^(500*2) = 10^1000
+        [TestMethod]
+        public void TestSqr_VeryBigNumbers()
+        {
+            var baseValue = "1" + new string('0', 500);
+            var expected = "1" + new string('0', 1000);
+
+            var result = calculator.Sqr(baseValue);
 
             Assert.AreEqual(expected, result);
         }
@@ -200,21 +244,21 @@ namespace OmaTest
                  "1000000000000000000")]
         [DataRow("1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                  "1000000000000000000000000000000000000000000000000000000")]
-        public void TestSqrt(string baseValue, string expected)
+        public void TestSqrt(string radicant, string expected)
         {
-            var result = calculator.Sqrt(baseValue);
+            var result = calculator.Sqrt(radicant);
 
             Assert.AreEqual(expected, result);
         }
 
-        // Sqrt(10^100000) = 10^50000
+        // Sqrt(10^2000) = 10^(2000/2) = 10^1000
         [TestMethod]
         public void TestSqrt_VeryBigNumbers()
         {
-            var baseValue = "1" + new string('0', 100000);
-            var expected = "1" + new string('0', 50000);
+            var radicant = "1" + new string('0', 2000);
+            var expected = "1" + new string('0', 1000);
 
-            var result = calculator.Sqrt(baseValue);
+            var result = calculator.Sqrt(radicant);
 
             Assert.AreEqual(expected, result);
         }

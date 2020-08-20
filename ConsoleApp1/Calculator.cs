@@ -261,7 +261,7 @@ namespace OmaConsole
 
         public string Sqr(string baseValue)
         {
-            throw new NotImplementedException();
+            return Multiply(baseValue, baseValue);
         }
 
         /// <summary>

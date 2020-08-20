@@ -261,15 +261,25 @@ namespace OmaConsole
 
         public string Sqr(string baseValue)
         {
-            if (baseValue == "0" || baseValue == "1")
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Finds the square root of radicant.
+        /// </summary>
+        /// <param name="radicant">The number to find the square root for.</param>
+        /// <returns>Square root of radicant.</returns>
+        public string Sqrt(string radicant)
+        {
+            if (radicant == "0" || radicant == "1")
             {
-                return baseValue;
+                return radicant;
             }
 
-            var negative = baseValue.StartsWith('-');
+            var negative = radicant.StartsWith('-');
 
             // we're not implementing unreal numbers
-            // alternative:  return "i * " + Sqr(baseValue.Substring(1));  with i = Sqr(-1) according to Euler
+            // alternative:  return "i * " + Sqrt(baseValue.Substring(1));  with i = Sqrt(-1) according to Euler
             if (negative)
                 throw new ArgumentOutOfRangeException();
 
@@ -277,22 +287,22 @@ namespace OmaConsole
             var resultNoDecimalPoint = new StringBuilder();
 
             // parse baseValue in groups of two, beginning at the back
-            int len = baseValue.Length % 2 == 0 ? 2 : 1;  // for odd lengths, start with just the first digit...
-            string group = baseValue.Substring(0, len);
+            int len = radicant.Length % 2 == 0 ? 2 : 1;  // for odd lengths, start with just the first digit...
+            string group = radicant.Substring(0, len);
             int afterDecimalNumerics = 0;
 
             // C# strings cannot have more than 2^32-1 characters, so using int for offset is fine
             int offset = -1;
-            while (offset < baseValue.Length || group != "0")
+            while (offset < radicant.Length || group != "0")
             {
                 // special treatment of first group
                 if (offset == -1)
                 {
                     offset = len;
                 }
-                else if (offset < baseValue.Length)
+                else if (offset < radicant.Length)
                 {
-                    group += baseValue.Substring(offset, 2);
+                    group += radicant.Substring(offset, 2);
                     offset += 2;
                 }
                 else if (afterDecimalNumerics < MaxAfterDecimalNumerics)

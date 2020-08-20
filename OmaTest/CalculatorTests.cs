@@ -180,9 +180,9 @@ namespace OmaTest
         }
 
         [TestMethod]
-        public void TestSqr_NegativeValues_ShouldThrow()
+        public void TestSqrt_NegativeValues_ShouldThrow()
         {
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => calculator.Sqr("-1"));
+            Assert.ThrowsException<ArgumentOutOfRangeException>(() => calculator.Sqrt("-1"));
         }
 
         [DataTestMethod]
@@ -200,21 +200,21 @@ namespace OmaTest
                  "1000000000000000000")]
         [DataRow("1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                  "1000000000000000000000000000000000000000000000000000000")]
-        public void TestSqr(string baseValue, string expected)
+        public void TestSqrt(string baseValue, string expected)
         {
-            var result = calculator.Sqr(baseValue);
+            var result = calculator.Sqrt(baseValue);
 
             Assert.AreEqual(expected, result);
         }
 
-        // Srq(10^100000) = 10^50000
+        // Sqrt(10^100000) = 10^50000
         [TestMethod]
-        public void TestSqr_VeryBigNumbers()
+        public void TestSqrt_VeryBigNumbers()
         {
             var baseValue = "1" + new string('0', 100000);
             var expected = "1" + new string('0', 50000);
 
-            var result = calculator.Sqr(baseValue);
+            var result = calculator.Sqrt(baseValue);
 
             Assert.AreEqual(expected, result);
         }

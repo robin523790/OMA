@@ -13,7 +13,7 @@ namespace OmaConsole
 
         /// <summary>
         /// Maximum number of numerics that can appear after the decimal point.
-        /// After this (e.g. in case of periodic or irrational numbers) the result will be rounded mathematically.
+        /// After this (e.g. in case of periodic or irrational numbers) the result will be cut off (no rounding)
         /// </summary>
         public int MaxAfterDecimalNumerics { get; set; } = 100000;
 
@@ -208,22 +208,216 @@ namespace OmaConsole
 
         public string Pow(string baseValue, string exponent)
         {
-            throw new NotImplementedException();
+            if (exponent == "0")
+            {
+                return "1";
+            }
+            else if (exponent == "1")
+            {
+                return baseValue;
+            }
+
+            if (baseValue == "0")
+            {
+                return "0";  // exponent == "0" ==> "1" takes precedence!
+            }
+
+            var negativeA = baseValue.StartsWith('-');
+            var negativeB = exponent.StartsWith('-');
+
+            // negative exponent: x ^ -y = 1 / x ^ y
+            if (negativeB)
+            {
+                return Div("1", Pow(baseValue, exponent.Substring(1)));
+            }
+
+            // negative baseValue with even exponent ==> positive result
+            // negative baseValue with odd exponent ==> negative result
+            if (negativeA)
+            {
+                char lastCharExp = exponent[exponent.Length - 1];
+                if (lastCharExp % 2 == 0)
+                {
+                    return Pow(baseValue.Substring(1), exponent);
+                }
+                else
+                {
+                    return "-" + Pow(baseValue.Substring(1), exponent);
+                }
+            }
+
+            string result = baseValue;
+
+            // Multiply baseValue as often as it takes...
+            // x^y = x*x*x* ....y times
+            while (exponent != "1")
+            {
+                result = Multiply(result, baseValue);
+                exponent = Sub(exponent, "1");
+            }
+
+            return result;
         }
 
         public string Sqr(string baseValue)
         {
-            throw new NotImplementedException();
+            if (baseValue == "0" || baseValue == "1")
+            {
+                return baseValue;
+            }
+
+            var negative = baseValue.StartsWith('-');
+
+            // we're not implementing unreal numbers
+            // alternative:  return "i * " + Sqr(baseValue.Substring(1));  with i = Sqr(-1) according to Euler
+            if (negative)
+                throw new ArgumentOutOfRangeException();
+
+            var result = new StringBuilder();
+            var resultNoDecimalPoint = new StringBuilder();
+
+            // parse baseValue in groups of two, beginning at the back
+            int len = baseValue.Length % 2 == 0 ? 2 : 1;  // for odd lengths, start with just the first digit...
+            string group = baseValue.Substring(0, len);
+            int afterDecimalNumerics = 0;
+
+            // C# strings cannot have more than 2^32-1 characters, so using int for offset is fine
+            int offset = -1;
+            while (offset < baseValue.Length || group != "0")
+            {
+                // special treatment of first group
+                if (offset == -1)
+                {
+                    offset = len;
+                }
+                else if (offset < baseValue.Length)
+                {
+                    group += baseValue.Substring(offset, 2);
+                    offset += 2;
+                }
+                else if (afterDecimalNumerics < MaxAfterDecimalNumerics)
+                {
+                    group += "00";
+                    if (afterDecimalNumerics == 0)
+                    {
+                        result.Append(NumberDecimalSeparator);
+                    }
+                    ++afterDecimalNumerics;
+                }
+                else
+                {
+                    break; // that's enough...
+                }
+
+                // remove any leading zeros, if any
+                while (group.Length > 1 && group[0] == '0')
+                {
+                    group = group.Substring(1);
+                }
+
+                // subtract as many odd numbers as possible => count is the next digit
+                string sub = "";
+                if (resultNoDecimalPoint.Length > 0)
+                    sub = Multiply(resultNoDecimalPoint.ToString(), "2");                
+                sub += "1"; // "string + 1"  equals  "value * 10 + 1"
+                int digit = 0;
+                for (; GreaterThanOrEqual(group, sub); sub = Add(sub, "2"))
+                {
+                    group = Sub(group, sub);
+                    ++digit;
+                }
+                result.Append(digit.ToString());
+                resultNoDecimalPoint.Append(digit.ToString());
+            }
+
+            return result.ToString();
         }
 
         public string Mod(string dividend, string divisor)
         {
-            throw new NotImplementedException();
+            int maxAfterDecimalNumericsSave = MaxAfterDecimalNumerics;
+            try
+            {
+                // Do an integer division, multiply again with divisor. Voila!
+                MaxAfterDecimalNumerics = 0;
+                string divided = Div(dividend, divisor);
+                string multipl = Multiply(divided, divisor);
+                return Sub(dividend, multipl);
+            }
+            finally
+            {
+                // Restore settings
+                MaxAfterDecimalNumerics = maxAfterDecimalNumericsSave;
+            }
         }
 
         public string Div(string dividend, string divisor)
         {
-            throw new NotImplementedException();
+            if (divisor == "0")
+                throw new DivideByZeroException();
+
+            if (divisor == "1")
+                return dividend;
+
+            var negativeA = dividend.StartsWith('-');
+            var negativeB = divisor.StartsWith('-');
+
+            // if both dividend and divisor are negative, think positive
+            if (negativeA && negativeB)
+            {
+                return Div(dividend.Substring(1), divisor.Substring(1));
+            }
+
+            // if only one is negative, the result is always negative
+            if (negativeA)
+            {
+                return "-" + Div(dividend.Substring(1), divisor);
+            }
+            else if (negativeB)
+            {
+                return "-" + Div(dividend, divisor.Substring(1));
+            }
+
+            int afterDecimalNumerics = 0;
+
+            var result = new StringBuilder();
+
+            // C# strings cannot have more than 2^32-1 characters, so using int for offset is fine
+            int offset = 0;
+            string part = "";
+            while (offset < dividend.Length || part != "0")
+            {
+                part = part != "0" ? part : "";
+                if (offset < dividend.Length)
+                {
+                    part += dividend.Substring(offset, 1);
+                    ++offset;
+                }
+                else if (afterDecimalNumerics < MaxAfterDecimalNumerics)
+                {
+                    part += "0";
+                    if (afterDecimalNumerics == 0)
+                    {
+                        result.Append(NumberDecimalSeparator);
+                    }
+                    ++afterDecimalNumerics;
+                }
+                else
+                {
+                    break; // that's enough...
+                }
+
+                int lastDigit = 0;
+                for (; GreaterThanOrEqual(part, divisor); part = Sub(part, divisor))
+                {
+                    ++lastDigit; // how many times does divisor fit into part?
+                }
+
+                if (lastDigit != 0 || result.Length != 0)  // skip leading zeros...
+                    result.Append(lastDigit.ToString());
+            }
+
+            return result.ToString();
         }
 
         public bool GreaterThanOrEqual(string left, string right)

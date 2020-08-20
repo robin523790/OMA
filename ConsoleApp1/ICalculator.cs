@@ -50,11 +50,11 @@
         string Mod(string dividend, string divisor);
 
         /// <summary>
-        /// Finds the remainder after division of a dividend by a divisor.
+        /// Returns the integer value of the division of a dividend by a divisor.
         /// </summary>
         /// <param name="dividend">The dividend.</param>
         /// <param name="divisor">The divisor.</param>
-        /// <returns>The remainder of the division.</returns>
+        /// <returns>The integer value of the division. No rounding of the result takes place.</returns>
         string Div(string dividend, string divisor);
 
         /// <summary>

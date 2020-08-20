@@ -13,11 +13,7 @@ namespace OmaTest
         [TestInitialize]
         public void TestInit()
         {
-            calculator = new Calculator
-            {
-                NumberDecimalSeparator = ".",  // Unittests use fixed locale
-                MaxAfterDecimalNumerics = 8,   // All our test cases should be short...
-            };
+            calculator = new Calculator();
         }
 
         [DataTestMethod]
@@ -29,9 +25,6 @@ namespace OmaTest
                  "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
                 "112345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678900")]
         // "add" some negative numbers
-        [DataRow("-1", "1", "0")]
-        [DataRow("-1", "-1", "-2")]
-        [DataRow("10", "-1", "9")]
         public void TestAdd(string summandA, string summandB, string expected)
         {
             var result1 = calculator.Add(summandA, summandB);
@@ -71,10 +64,6 @@ namespace OmaTest
                   "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901",
                   "99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")]
         // "subtract" some negative numbers
-        [DataRow("-1", "1", "-2")]
-        [DataRow("-1", "-1", "0")]
-        [DataRow("10", "-1", "11")]
-        [DataRow("-10", "-1", "-9")]
         public void TestSub(string minuend, string subtrahend, string expected)
         {
             var result = calculator.Sub(minuend, subtrahend);
@@ -98,11 +87,7 @@ namespace OmaTest
         [DataTestMethod]
         [DataRow("0", "0", "0")]
         [DataRow("1000", "1", "1000")]
-        [DataRow("-1000", "1", "-1000")]
-        [DataRow("-1000", "-1", "1000")]
         [DataRow("2000", "2", "4000")]
-        [DataRow("2000", "-2", "-4000")]
-        [DataRow("-2000", "-2", "4000")]
         [DataRow("123456789012345678901234567890123456789012345678901234567890",
                  "100000000000000000000000000000000000000000000000000000000000",
                  "12345678901234567890123456789012345678901234567890123456789000000000000000000000000000000000000000000000000000000000000")]
@@ -134,7 +119,6 @@ namespace OmaTest
         [DataRow("0", "1", "0")] // Pow() of zero remains zero
         [DataRow("0", "0", "1")]
         [DataRow("0", "10", "0")]
-        [DataRow("0", "-1", "0")]
         [DataRow("10", "0", "1")]
         [DataRow("10", "1", "10")]
         [DataRow("10", "2", "100")]
@@ -143,23 +127,6 @@ namespace OmaTest
         [DataRow("3", "1", "3")]
         [DataRow("3", "2", "9")]
         [DataRow("3", "3", "27")]
-        [DataRow("-3", "0", "1")]
-        [DataRow("-3", "1", "-3")]
-        [DataRow("-3", "2", "9")]
-        [DataRow("-3", "3", "-27")]
-        // negative exponents can lead to periodic (unending) results... Set to 8 digits 
-        [DataRow("3", "-1", ".33333333")]
-        [DataRow("3", "-2", ".11111111")]
-        [DataRow("3", "-3", ".03703703")]
-        [DataRow("-3", "-1", "-.33333333")]
-        [DataRow("-3", "-2", ".11111111")]
-        [DataRow("-3", "-3", "-.03703703")]
-        [DataRow("4", "-1", ".25")]
-        [DataRow("4", "-2", ".0625")]
-        [DataRow("4", "-3", ".015625")]
-        [DataRow("-4", "-1", "-.25")]
-        [DataRow("-4", "-2", ".0625")]
-        [DataRow("-4", "-3", "-.015625")]
         public void TestPow(string baseValue, string exponent, string expected)
         {
             var result = calculator.Pow(baseValue, exponent);
@@ -186,7 +153,6 @@ namespace OmaTest
         [DataRow("1", "1")]
         [DataRow("2", "4")]
         [DataRow("3", "9")]
-        [DataRow("-3", "9")]
         [DataRow("4", "16")]
         [DataRow("5", "25")]
         [DataRow("6", "36")]
@@ -224,46 +190,6 @@ namespace OmaTest
         }
 
         [TestMethod]
-        public void TestSqrt_NegativeValues_ShouldThrow()
-        {
-            Assert.ThrowsException<ArgumentOutOfRangeException>(() => calculator.Sqrt("-1"));
-        }
-
-        [DataTestMethod]
-        [DataRow("0", "0")]
-        [DataRow("1", "1")]
-        // most baseValues have a periodic (unending) square root... Set to 8 digits
-        [DataRow("2", "1.41421356")]
-        [DataRow("3", "1.73205080")]
-        [DataRow("4", "2")]
-        [DataRow("9", "3")]
-        [DataRow("16", "4")]
-        [DataRow("2916", "54")]
-        [DataRow("1000000", "1000")]
-        [DataRow("1000000000000000000000000000000000000",
-                 "1000000000000000000")]
-        [DataRow("1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                 "1000000000000000000000000000000000000000000000000000000")]
-        public void TestSqrt(string radicant, string expected)
-        {
-            var result = calculator.Sqrt(radicant);
-
-            Assert.AreEqual(expected, result);
-        }
-
-        // Sqrt(10^2000) = 10^(2000/2) = 10^1000
-        [TestMethod]
-        public void TestSqrt_VeryBigNumbers()
-        {
-            var radicant = "1" + new string('0', 2000);
-            var expected = "1" + new string('0', 1000);
-
-            var result = calculator.Sqrt(radicant);
-
-            Assert.AreEqual(expected, result);
-        }
-
-        [TestMethod]
         public void TestMod_DivideByNull_ShouldThrow()
         {
             Assert.ThrowsException<DivideByZeroException>(() => calculator.Mod("0"/*irrelevant*/, "0"));
@@ -277,28 +203,6 @@ namespace OmaTest
         [DataRow("10", "6", "4")]
         [DataRow("10", "10", "0")]
         [DataRow("10", "11", "10")]
-
-        [DataRow("-10", "1", "0")]
-        [DataRow("-10", "2", "0")]
-        [DataRow("-10", "3", "-1")]
-        [DataRow("-10", "6", "-4")]
-        [DataRow("-10", "10", "0")]
-        [DataRow("-10", "11", "-10")]
-
-        [DataRow("10", "-1", "0")]
-        [DataRow("10", "-2", "0")]
-        [DataRow("10", "-3", "1")]
-        [DataRow("10", "-6", "4")]
-        [DataRow("10", "-10", "0")]
-        [DataRow("10", "-11", "10")]
-
-        [DataRow("-10", "-1", "0")]
-        [DataRow("-10", "-2", "0")]
-        [DataRow("-10", "-3", "-1")]
-        [DataRow("-10", "-6", "-4")]
-        [DataRow("-10", "-10", "0")]
-        [DataRow("-10", "-11", "-10")]
-
         [DataRow("1234567890000000000000000000000000000000", "1234567890", "0")]
         [DataRow("1234567890000000000000000000000000000001", "1234567890", "1")]
         public void TestMod(string dividend, string divisor, string expected)
@@ -318,32 +222,10 @@ namespace OmaTest
         [DataRow("0", "1", "0")]
         [DataRow("10", "1", "10")]
         [DataRow("10", "2", "5")]
-        [DataRow("10", "3", "3.33333333")]
-        [DataRow("10", "6", "1.66666666")]
+        [DataRow("10", "3", "3")]
+        [DataRow("10", "6", "1")]
         [DataRow("10", "10", "1")]
-        [DataRow("10", "20", ".5")]
-
-        [DataRow("-10", "1", "-10")]
-        [DataRow("-10", "2", "-5")]
-        [DataRow("-10", "3", "-3.33333333")]
-        [DataRow("-10", "6", "-1.66666666")]
-        [DataRow("-10", "10", "-1")]
-        [DataRow("-10", "20", "-.5")]
-
-        [DataRow("10", "-1", "-10")]
-        [DataRow("10", "-2", "-5")]
-        [DataRow("10", "-3", "-3.33333333")]
-        [DataRow("10", "-6", "-1.66666666")]
-        [DataRow("10", "-10", "-1")]
-        [DataRow("10", "-20", "-.5")]
-
-        [DataRow("-10", "-1", "10")]
-        [DataRow("-10", "-2", "5")]
-        [DataRow("-10", "-3", "3.33333333")]
-        [DataRow("-10", "-6", "1.66666666")]
-        [DataRow("-10", "-10", "1")]
-        [DataRow("-10", "-20", ".5")]
-
+        [DataRow("10", "20", "0")]
         [DataRow("1234567890000000000000000000000000000000", "1234567890", "1000000000000000000000000000000")]
         public void TestDiv(string dividend, string divisor, string expected)
         {
@@ -357,11 +239,6 @@ namespace OmaTest
         [DataRow("1", "0", true)]
         [DataRow("0", "1", false)]
         [DataRow("2", "1", true)]
-        [DataRow("0", "-1", true)]
-        [DataRow("-2", "-1", false)]
-        [DataRow("-2", "-2", true)]
-        [DataRow("-2", "3", false)]
-        [DataRow("2", "-3", true)]
         [DataRow("89999999999999999999999999999999999999999999999999999999999999999990",
                   "9999999999999999999999999999999999999999999999999999999999999999999",
                  true)]
@@ -395,11 +272,6 @@ namespace OmaTest
         [DataRow("1", "0", true)]
         [DataRow("0", "1", false)]
         [DataRow("2", "1", true)]
-        [DataRow("0", "-1", true)]
-        [DataRow("-2", "-1", false)]
-        [DataRow("-2", "-2", false)]
-        [DataRow("-2", "3", false)]
-        [DataRow("2", "-3", true)]
         [DataRow("89999999999999999999999999999999999999999999999999999999999999999990",
                   "9999999999999999999999999999999999999999999999999999999999999999999",
                  true)]

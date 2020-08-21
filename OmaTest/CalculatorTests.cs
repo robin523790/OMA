@@ -38,9 +38,9 @@ namespace OmaTest
         [TestMethod]
         public void TestAdd_VeryBigNumbers()
         {
-            var summandA = new string('9', 100000);
+            var summandA = new string('9', 10000000);
             var summandB = "1";
-            var expected = "1" + new string('0', 100000);
+            var expected = "1" + new string('0', 10000000);
 
             var result1 = calculator.Add(summandA, summandB);
             var result2 = calculator.Add(summandB, summandA);  // Add() must be commutative, ie. same result when inputs are swapped
@@ -75,9 +75,9 @@ namespace OmaTest
         [TestMethod]
         public void TestSub_VeryBigNumbers()
         {
-            var minuend = "1" + new string('0', 100000);
+            var minuend = "1" + new string('0', 10000000);
             var subtrahend = "1";
-            var expected = new string('9', 100000);
+            var expected = new string('9', 10000000);
 
             var result = calculator.Sub(minuend, subtrahend);
 
@@ -213,6 +213,22 @@ namespace OmaTest
         }
 
         [TestMethod]
+        public void TestMod_VeryBigNumbers()
+        {
+            var dividend = "12345678901234567890123456789012345678901234567890" + new string('0', 100000);
+            var divisor1 = "12345678901234567890123456789012345678901234567890";
+            var divisor2 = "12345678901234567890123456789012345678901234567891";
+            var expected1 = "0";
+            var expected2 = "2272325713533227610035641853109142442186208450773";
+
+            var result1 = calculator.Mod(dividend, divisor1);
+            var result2 = calculator.Mod(dividend, divisor2);
+
+            Assert.AreEqual(expected1, result1);
+            Assert.AreEqual(expected2, result2);
+        }
+
+        [TestMethod]
         public void TestDiv_DivideByNull_ShouldThrow()
         {
             Assert.ThrowsException<DivideByZeroException>(() => calculator.Div("0"/*irrelevant*/, "0"));
@@ -229,6 +245,18 @@ namespace OmaTest
         [DataRow("1234567890000000000000000000000000000000", "1234567890", "1000000000000000000000000000000")]
         public void TestDiv(string dividend, string divisor, string expected)
         {
+            var result = calculator.Div(dividend, divisor);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        public void TestDiv_VeryBigNumbers()
+        {
+            var dividend = "12345678901234567890123456789012345678901234567890" + new string('0', 1000000);
+            var divisor = "12345678901234567890123456789012345678901234567890";
+            var expected = "1" + new string('0', 1000000);
+
             var result = calculator.Div(dividend, divisor);
 
             Assert.AreEqual(expected, result);

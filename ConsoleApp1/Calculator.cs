@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace OmaConsole
 {
@@ -41,44 +42,31 @@ namespace OmaConsole
 
 
             var len = Math.Max(summandA.Length, summandB.Length);
-            var result = new StringBuilder();
+            char[] result = new char[len + 1];
 
             int carry = 0; // Carry over from one digit to the next...
             for (int i = 0; i < len; i++)
             {
                 // Get the last digits of summandA and summandB
                 // - by now the code ensures that both are positive
-                char charA = i < summandA.Length ? summandA[summandA.Length - 1 - i] : '0';
-                char charB = i < summandB.Length ? summandB[summandB.Length - 1 - i] : '0';
-                int valA = (int)Char.GetNumericValue(charA);
-                int valB = (int)Char.GetNumericValue(charB);
+                int valA = i < summandA.Length ? summandA[summandA.Length - 1 - i] - '0' : 0;
+                int valB = i < summandB.Length ? summandB[summandB.Length - 1 - i] - '0' : 0;
                 int res = valA + valB;
                 res += carry;     // Add old carry-over value
-                carry = res / 10; // Carry over the 10s to the next digit
-                res %= 10;        // Ignore the 10s here
-                result.Insert(0, res.ToString());
+                carry = 0;
+                while (res > 9)
+                {
+                    carry += 1;   // Carry over the 10s to the next digit
+                    res -= 10;    // Ignore the 10s here
+                }
+                res += '0';
+                result[len - i] = (char)res;
             }
 
             // insert last carry-over value, if any
-            if (carry > 0)
-            {
-                result.Insert(0, carry.ToString());
-            }
-
-            // remove any leading zeros (possible if one addend has leading zeros, or if they are negative)
-            while (result.Length > 1 && result[0] == '0')
-            {
-                result.Remove(0, 1);
-            }
-
-            // if both addends are negative, the result is always negative too
-            // (the case of only one addend being negative is handled above as a subtraction)
-            if (negativeA && negativeB)
-            {
-                result.Insert(0, '-');
-            }
-
-            return result.ToString();
+            result[0] = (char)(carry + '0');
+            int startpos = carry != 0 ? 0 : 1;
+            return new string(result, startpos, len + 1 - startpos);
         }
 
         public string Sub(string minuend, string subtrahend)
@@ -112,39 +100,35 @@ namespace OmaConsole
                 return "-" + Sub(subtrahend, minuend);
             }
 
+
             var len = Math.Max(minuend.Length, subtrahend.Length);
-            var result = new StringBuilder();
+            char[] result = new char[len];
 
             int carry = 0; // Carry over from one digit to the next...
             for (int i = 0; i < len; i++)
             {
                 // Get the last digits of minuend and subtrahend
                 // - by now the code ensures that both are positive
-                char charA = i < minuend.Length ? minuend[minuend.Length - 1 - i] : '0';
-                char charB = i < subtrahend.Length ? subtrahend[subtrahend.Length - 1 - i] : '0';
-                int valA = (int)Char.GetNumericValue(charA);
-                int valB = (int)Char.GetNumericValue(charB);
+                int valA = i < minuend.Length ? minuend[minuend.Length - 1 - i] - '0' : 0;
+                int valB = i < subtrahend.Length ? subtrahend[subtrahend.Length - 1 - i] - '0' : 0;
                 int res = valA - valB;
                 res -= carry;     // Add old carry-over value
-                if (res < 0)
+                carry = 0;
+                while (res < 0)
                 {
                     res += 10;
                     carry = 1;    // Take 10 from the next digit
                 }
-                else
-                {
-                    carry = 0;
-                }
-                result.Insert(0, res.ToString());
+                res += '0';
+                result[len - 1 - i] = (char)res;
             }
+
 
             // remove any leading zeros, if any
-            while (result.Length > 1 && result[0] == '0')
-            {
-                result.Remove(0, 1);
-            }
-
-            return result.ToString();
+            int startpos = 0;
+            for (; result[startpos] == '0'; startpos++)
+                ;
+            return new string(result, startpos, len - startpos);
         }
 
         public string Multiply(string factorA, string factorB)
@@ -168,9 +152,11 @@ namespace OmaConsole
                 return "-" + Multiply(factorA, factorB.Substring(1));
             }
 
+
             string result = "0";
 
-            for (int a = factorA.Length - 1; a >= 0; a--)
+            object localLockObject = new object();
+            Parallel.For(0, factorA.Length, a =>
             {
                 string rowResult = "0";
 
@@ -178,8 +164,8 @@ namespace OmaConsole
                 {
                     // Get the last digits of factorA and factorB
                     // - by now the code ensures that both are positive
-                    int valA = (int)Char.GetNumericValue(factorA[a]);
-                    int valB = (int)Char.GetNumericValue(factorB[b]);
+                    int valA = factorA[a] - '0';
+                    int valB = factorB[b] - '0';
                     int res = valA * valB;
                     string row = res.ToString();
 
@@ -199,9 +185,12 @@ namespace OmaConsole
                 {
                     rowResult += new string('0', zerosA);
                 }
-                
-                result = Add(rowResult, result);
-            }
+
+                lock (localLockObject)
+                {
+                    result = Add(rowResult, result);
+                }
+            });
 
             return result;
         }
@@ -246,6 +235,7 @@ namespace OmaConsole
                 }
             }
 
+
             string result = baseValue;
 
             // Multiply baseValue as often as it takes...
@@ -283,8 +273,9 @@ namespace OmaConsole
             if (negative)
                 throw new ArgumentOutOfRangeException();
 
-            var result = new StringBuilder();
-            var resultNoDecimalPoint = new StringBuilder();
+
+            var result = new StringBuilder(radicant.Length);
+            var resultNoDecimalPoint = new StringBuilder(radicant.Length);
 
             // parse baseValue in groups of two, beginning at the back
             int len = radicant.Length % 2 == 0 ? 2 : 1;  // for odd lengths, start with just the first digit...
@@ -310,6 +301,8 @@ namespace OmaConsole
                     group += "00";
                     if (afterDecimalNumerics == 0)
                     {
+                        if (result.Length == 0)
+                            result.Append("0");
                         result.Append(NumberDecimalSeparator);
                     }
                     ++afterDecimalNumerics;
@@ -350,9 +343,8 @@ namespace OmaConsole
             {
                 // Do an integer division, multiply again with divisor. Voila!
                 MaxAfterDecimalNumerics = 0;
-                string divided = Div(dividend, divisor);
-                string multipl = Multiply(divided, divisor);
-                return Sub(dividend, multipl);
+                var result = DivideHelper(dividend, divisor);
+                return result.Item2;
             }
             finally
             {
@@ -363,71 +355,8 @@ namespace OmaConsole
 
         public string Div(string dividend, string divisor)
         {
-            if (divisor == "0")
-                throw new DivideByZeroException();
-
-            if (divisor == "1")
-                return dividend;
-
-            var negativeA = dividend.StartsWith('-');
-            var negativeB = divisor.StartsWith('-');
-
-            // if both dividend and divisor are negative, think positive
-            if (negativeA && negativeB)
-            {
-                return Div(dividend.Substring(1), divisor.Substring(1));
-            }
-
-            // if only one is negative, the result is always negative
-            if (negativeA)
-            {
-                return "-" + Div(dividend.Substring(1), divisor);
-            }
-            else if (negativeB)
-            {
-                return "-" + Div(dividend, divisor.Substring(1));
-            }
-
-            int afterDecimalNumerics = 0;
-
-            var result = new StringBuilder();
-
-            // C# strings cannot have more than 2^32-1 characters, so using int for offset is fine
-            int offset = 0;
-            string part = "";
-            while (offset < dividend.Length || part != "0")
-            {
-                part = part != "0" ? part : "";
-                if (offset < dividend.Length)
-                {
-                    part += dividend.Substring(offset, 1);
-                    ++offset;
-                }
-                else if (afterDecimalNumerics < MaxAfterDecimalNumerics)
-                {
-                    part += "0";
-                    if (afterDecimalNumerics == 0)
-                    {
-                        result.Append(NumberDecimalSeparator);
-                    }
-                    ++afterDecimalNumerics;
-                }
-                else
-                {
-                    break; // that's enough...
-                }
-
-                int lastDigit = 0;
-                for (; GreaterThanOrEqual(part, divisor); part = Sub(part, divisor))
-                {
-                    ++lastDigit; // how many times does divisor fit into part?
-                }
-
-                if (lastDigit != 0 || result.Length != 0)  // skip leading zeros...
-                    result.Append(lastDigit.ToString());
-            }
-
-            return result.ToString();
+            var result = DivideHelper(dividend, divisor);
+            return result.Item1;
         }
 
         public bool GreaterThanOrEqual(string left, string right)
@@ -493,6 +422,96 @@ namespace OmaConsole
             }
 
             return false; // satisfy compiler, cannot reach this
+        }
+
+        /// <summary>
+        /// Returns the integer value of the division of a dividend by a divisor, and the remaining part.
+        /// </summary>
+        /// <param name="dividend">The dividend.</param>
+        /// <param name="divisor">The divisor.</param>
+        /// <returns>A tuple of the integer value of the division (no rounding), and the remaining part.</returns>
+        private Tuple<string, string> DivideHelper(string dividend, string divisor)
+        {
+            if (divisor == "0")
+                throw new DivideByZeroException();
+
+            if (divisor == "1")
+                return new Tuple<string, string>(dividend, "0");
+
+            var negativeA = dividend.StartsWith('-');
+            var negativeB = divisor.StartsWith('-');
+
+            // if both dividend and divisor are negative, think positive
+            // - if either negativeA or negativeB => the division is always negative
+            // - if negativeA => the modulo is always negative (regardless of negativeB)
+            if (negativeA && negativeB)
+            {
+                var res = DivideHelper(dividend.Substring(1), divisor.Substring(1));
+                var division = res.Item1;
+                var remaining = res.Item2 == "0" ? "0" : "-" + res.Item2;
+                return new Tuple<string, string>(division, remaining);
+            }
+            else if (negativeA)
+            {
+                var res = DivideHelper(dividend.Substring(1), divisor);
+                var division = res.Item1 == "0" ? "0" : "-" + res.Item1;
+                var remaining = res.Item2 == "0" ? "0" : "-" + res.Item2;
+                return new Tuple<string, string>(division, remaining);
+            }
+            else if (negativeB)
+            {
+                var res = DivideHelper(dividend, divisor.Substring(1));
+                var division = res.Item1 == "0" ? "0" : "-" + res.Item1;
+                var remaining = res.Item2;
+                return new Tuple<string, string>(division, remaining);
+            }
+
+
+            int afterDecimalNumerics = 0;
+            var result = new StringBuilder(dividend.Length);
+
+            // C# strings cannot have more than 2^32-1 characters, so using int for offset is fine
+            int offset = 0;
+            string part = "";
+            while (offset < dividend.Length || part != "0")
+            {
+                part = part != "0" ? part : "";
+                if (offset < dividend.Length)
+                {
+                    part += dividend.Substring(offset, 1);
+                    ++offset;
+                }
+                else if (afterDecimalNumerics < MaxAfterDecimalNumerics)
+                {
+                    part += "0";
+                    if (afterDecimalNumerics == 0)
+                    {
+                        if (result.Length == 0)
+                            result.Append("0");
+                        result.Append(NumberDecimalSeparator);
+                    }
+                    ++afterDecimalNumerics;
+                }
+                else
+                {
+                    break; // that's enough...
+                }
+
+                int lastDigit = 0;
+                while (GreaterThanOrEqual(part, divisor))
+                {
+                    part = Sub(part, divisor);
+                    ++lastDigit; // how many times does divisor fit into part?
+                }
+
+                if (lastDigit != 0 || result.Length != 0)  // skip leading zeros...
+                    result.Append(lastDigit.ToString());
+            }
+
+            var div = result.ToString();
+            if (div.Length == 0)
+                div = "0";
+            return new Tuple<string, string>(div, part);
         }
     }
 }

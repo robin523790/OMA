@@ -8,7 +8,7 @@ namespace ConsoleApp1
         static void Main(string[] args)
         {
             var calculator = new Calculator();
-            Console.WriteLine(calculator.Add("1", "2"));
+            Console.WriteLine(calculator.Div("1", "2"));
         }
     }
 }

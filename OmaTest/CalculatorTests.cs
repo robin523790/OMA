@@ -1,4 +1,3 @@
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Serialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OmaConsole;
 using System;
@@ -45,9 +44,9 @@ namespace OmaTest
         [TestMethod]
         public void TestAdd_VeryBigNumbers()
         {
-            var summandA = new string('9', 100000);
+            var summandA = new string('9', 10000000);
             var summandB = "1";
-            var expected = "1" + new string('0', 100000);
+            var expected = "1" + new string('0', 10000000);
 
             var result1 = calculator.Add(summandA, summandB);
             var result2 = calculator.Add(summandB, summandA);  // Add() must be commutative, ie. same result when inputs are swapped
@@ -86,9 +85,9 @@ namespace OmaTest
         [TestMethod]
         public void TestSub_VeryBigNumbers()
         {
-            var minuend = "1" + new string('0', 100000);
+            var minuend = "1" + new string('0', 10000000);
             var subtrahend = "1";
-            var expected = new string('9', 100000);
+            var expected = new string('9', 10000000);
 
             var result = calculator.Sub(minuend, subtrahend);
 
@@ -148,18 +147,18 @@ namespace OmaTest
         [DataRow("-3", "2", "9")]
         [DataRow("-3", "3", "-27")]
         // negative exponents can lead to periodic (unending) results... Set to 8 digits 
-        [DataRow("3", "-1", ".33333333")]
-        [DataRow("3", "-2", ".11111111")]
-        [DataRow("3", "-3", ".03703703")]
-        [DataRow("-3", "-1", "-.33333333")]
-        [DataRow("-3", "-2", ".11111111")]
-        [DataRow("-3", "-3", "-.03703703")]
-        [DataRow("4", "-1", ".25")]
-        [DataRow("4", "-2", ".0625")]
-        [DataRow("4", "-3", ".015625")]
-        [DataRow("-4", "-1", "-.25")]
-        [DataRow("-4", "-2", ".0625")]
-        [DataRow("-4", "-3", "-.015625")]
+        [DataRow("3", "-1", "0.33333333")]
+        [DataRow("3", "-2", "0.11111111")]
+        [DataRow("3", "-3", "0.03703703")]
+        [DataRow("-3", "-1", "-0.33333333")]
+        [DataRow("-3", "-2", "0.11111111")]
+        [DataRow("-3", "-3", "-0.03703703")]
+        [DataRow("4", "-1", "0.25")]
+        [DataRow("4", "-2", "0.0625")]
+        [DataRow("4", "-3", "0.015625")]
+        [DataRow("-4", "-1", "-0.25")]
+        [DataRow("-4", "-2", "0.0625")]
+        [DataRow("-4", "-3", "-0.015625")]
         public void TestPow(string baseValue, string exponent, string expected)
         {
             var result = calculator.Pow(baseValue, exponent);
@@ -251,12 +250,12 @@ namespace OmaTest
             Assert.AreEqual(expected, result);
         }
 
-        // Sqrt(10^2000) = 10^(2000/2) = 10^1000
+        // Sqrt(10^1000) = 10^(1000/2) = 10^500
         [TestMethod]
         public void TestSqrt_VeryBigNumbers()
         {
-            var radicant = "1" + new string('0', 2000);
-            var expected = "1" + new string('0', 1000);
+            var radicant = "1" + new string('0', 1000);
+            var expected = "1" + new string('0', 500);
 
             var result = calculator.Sqrt(radicant);
 
@@ -309,6 +308,22 @@ namespace OmaTest
         }
 
         [TestMethod]
+        public void TestMod_VeryBigNumbers()
+        {
+            var dividend = "12345678901234567890123456789012345678901234567890" + new string('0', 100000);
+            var divisor1 = "12345678901234567890123456789012345678901234567890";
+            var divisor2 = "12345678901234567890123456789012345678901234567891";
+            var expected1 = "0";
+            var expected2 = "2272325713533227610035641853109142442186208450773";
+
+            var result1 = calculator.Mod(dividend, divisor1);
+            var result2 = calculator.Mod(dividend, divisor2);
+
+            Assert.AreEqual(expected1, result1);
+            Assert.AreEqual(expected2, result2);
+        }
+
+        [TestMethod]
         public void TestDiv_DivideByNull_ShouldThrow()
         {
             Assert.ThrowsException<DivideByZeroException>(() => calculator.Div("0"/*irrelevant*/, "0"));
@@ -321,32 +336,62 @@ namespace OmaTest
         [DataRow("10", "3", "3.33333333")]
         [DataRow("10", "6", "1.66666666")]
         [DataRow("10", "10", "1")]
-        [DataRow("10", "20", ".5")]
+        [DataRow("10", "20", "0.5")]
 
         [DataRow("-10", "1", "-10")]
         [DataRow("-10", "2", "-5")]
         [DataRow("-10", "3", "-3.33333333")]
         [DataRow("-10", "6", "-1.66666666")]
         [DataRow("-10", "10", "-1")]
-        [DataRow("-10", "20", "-.5")]
+        [DataRow("-10", "20", "-0.5")]
 
         [DataRow("10", "-1", "-10")]
         [DataRow("10", "-2", "-5")]
         [DataRow("10", "-3", "-3.33333333")]
         [DataRow("10", "-6", "-1.66666666")]
         [DataRow("10", "-10", "-1")]
-        [DataRow("10", "-20", "-.5")]
+        [DataRow("10", "-20", "-0.5")]
 
         [DataRow("-10", "-1", "10")]
         [DataRow("-10", "-2", "5")]
         [DataRow("-10", "-3", "3.33333333")]
         [DataRow("-10", "-6", "1.66666666")]
         [DataRow("-10", "-10", "1")]
-        [DataRow("-10", "-20", ".5")]
+        [DataRow("-10", "-20", "0.5")]
 
         [DataRow("1234567890000000000000000000000000000000", "1234567890", "1000000000000000000000000000000")]
         public void TestDiv(string dividend, string divisor, string expected)
         {
+            var result = calculator.Div(dividend, divisor);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [TestMethod]
+        public void TestDiv_VeryBigNumbers()
+        {
+            var dividend = "12345678901234567890123456789012345678901234567890" + new string('0', 1000000);
+            var divisor = "12345678901234567890123456789012345678901234567890";
+            var expected = "1" + new string('0', 1000000);
+
+            var result = calculator.Div(dividend, divisor);
+
+            Assert.AreEqual(expected, result);
+        }
+
+        [DataTestMethod]
+        [DataRow("0", "1", "0")]
+        [DataRow("10", "1", "10")]
+        [DataRow("10", "2", "5")]
+        [DataRow("10", "3", "3")]
+        [DataRow("10", "6", "1")]
+        [DataRow("10", "10", "1")]
+        [DataRow("10", "20", "0")]
+        [DataRow("1234567890000000000000000000000000000000", "1234567890", "1000000000000000000000000000000")]
+        public void TestDiv_Integer(string dividend, string divisor, string expected)
+        {
+            calculator.MaxAfterDecimalNumerics = 0;
+
             var result = calculator.Div(dividend, divisor);
 
             Assert.AreEqual(expected, result);
